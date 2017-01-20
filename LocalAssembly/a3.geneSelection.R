@@ -12,25 +12,23 @@ gc()
 cat("\n\n########## Reading Arguments ##########\n", sep="")
 args = commandArgs(TRUE)
 for (arg in args) cat("  ", arg, "\n", sep="")
-groupFile = args[1] # "01.data/03.MCL/02.mcl/mcl.out.txt"		## input from previous step
-outFile = args[2] # "01.data/04.GeneOfInterest/GeneID.txt"		## output for gene group
+groupFile = args[1] # "01.data/03.MCL/02.mcl/mcl.out.txt"
+outFile = args[2] # "01.data/04.GeneOfInterest/GeneID.txt"
 size = as.numeric(args[3]) # 1000
-sp = args[4] # "AT"			## species gene ID prefix
+sp = args[4] # "AT"
 
 ###########################################################################################
 ###  Combine paralog groups into meta-group of preset size.								###
 ###########################################################################################
 
 con = file(groupFile, "r", blocking = FALSE)
-data = readLines(con)		## read all the data in but not separate them
+data = readLines(con)
 close(con)
 
 print("Processing data")
-data.gene = lapply(data, strsplit, "\\s+")	## separate each line into elements
+data.gene = lapply(data, strsplit, "\\s+")
 group = list()
 i = 0
-
-# combine groups and make sure the group size is within certain range
 while(length(data.gene) > 0){
 	i = i + 1
 	print(i)
@@ -67,7 +65,7 @@ system(paste(":> ", outFile))
 
 for(i in 1:length(group)){
 	write(group[[i]], file=outFile, sep="\n", append=TRUE)
-	write("", file=outFile, append=TRUE)	## write an extra blank line to separate groups
+	write("", file=outFile, append=TRUE)
 }
 
 ###########################################################################################

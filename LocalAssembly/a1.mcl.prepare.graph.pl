@@ -3,9 +3,9 @@
 
 use strict;
 
-my $srcfile = shift @ARGV;	# blast output as input
-my $tgtfile = shift @ARGV;	# outputfile
-my $mode = shift @ARGV;		# wu, ncbi
+my $srcfile = shift @ARGV;
+my $tgtfile = shift @ARGV;
+my $mode = shift @ARGV;
 
 open(SRC, $srcfile);
 open(TGT, ">$tgtfile");
@@ -47,7 +47,6 @@ foreach my $line(<SRC>){
 	$s = join(".", @temp);
 	#print "$q\t$s\n";
 	
-	## combine multiple segment between the same gene pair
 	if($q eq $preq and $s eq $pres){
 		$score += $e;
 		$count += 1;
@@ -62,10 +61,8 @@ foreach my $line(<SRC>){
 		if($count == 0){
 			$average = $score;
 		}else{
-			$average = $score/$count;	## take average of multiple segments
+			$average = $score/$count;
 		}
-		
-		## print to the output file
 		print TGT  "$preq\t$pres\t$average\n";
 		$score = $e;
 		$count = 1;

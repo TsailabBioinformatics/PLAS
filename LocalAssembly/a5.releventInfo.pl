@@ -73,16 +73,16 @@ while(my $line = <TRA>){
 	}
 }
 push @{$hash{$pre}}, $len;
-push @{$hash{$pre}}, $gc/$len*100;		## get the GC content output
+push @{$hash{$pre}}, $gc/$len*100;
 
 ## write to output file
-print TGT "Gene_ID\tProtein_len\tTranscript_len\tGC_Content\tGroup_ID\n";	# make the header
+print TGT "Gene_ID\tProtein_len\tTranscript_len\tGC_Content\tGroup_ID\n";
 open(REF, $reffile);
 my $i = 1;
 my $group = 0;
 foreach my $line (<REF>){
 	chomp $line;
-	$line =~ s/\s+$//g;		## remove the blank space at the end of the line
+	$line =~ s/\s+$//g;
 	if($line eq ""){
 		$i++;
 		next;
