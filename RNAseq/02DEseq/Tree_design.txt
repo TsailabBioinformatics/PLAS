@@ -1,4 +1,0 @@
-sample_id	File	Mismatch	Sample
-Pdel_P1	P1_m3counts.txt	m3	P1
-Pdel_P4	P4_m3counts.txt	m3	P4
-
