@@ -1,19 +1,14 @@
-#!/bin/bash
-#SBATCH -J PLAS_runMe8
-#SBATCH -o PLAS_runMe8.o%j
-#SBATCH -N 1
-#SBATCH -n 24
-#SBATCH -p normal
-#SBATCH -t 07:00:00
+#PBS -S /bin/bash
+#PBS -q batch
+#PBS -N PLAS
+#PBS -l nodes=1:ppn=48:AMD
+#PBS -l walltime=10:00:00
+#PBS -l mem=48gb
 
-#SBATCH --mail-user=sjq28742@uga.edu
-#SBATCH --mail-type=begin
-#SBATCH --mail-type=end
-mode="paired-end"
+module load blast+
+module load perl
 
-moduleload perl
-module load blast
-#### summarize all runs
+##Summarize all runs
 grep ">" 01.data/05.SplitGenes/03.Full.Length/full.length.contigs.nucl.fasta > 01.data/05.SplitGenes/03.Full.Length/count1
 sed -i "s/>//" 01.data/05.SplitGenes/03.Full.Length/count1
 perl 00.script/b3.full.length.format.pl 01.data/04.GeneOfInterest/GeneID.v1.txt 01.data/05.SplitGenes/03.Full.Length/count1 01.data/05.SplitGenes/03.Full.Length/count2 01.data/05.SplitGenes/03.Full.Length/count3
