@@ -52,7 +52,7 @@ foreach my $line (<REF>){
 	
 	## not come across with the blank line, so print to the file
 	print TGT ">$line\n";
-	print TGT join("\n", @{$hash{$line}}), "\n";
+	print TGT join("\n", @{$hash{$gene}}), "\n";
 }
 
 if(-z "$outFolder/$group/$group.fasta"){

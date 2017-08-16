@@ -4,8 +4,6 @@
 use strict;
 use Bio::SeqIO;
 
-system("echo 'Running 10.transfer.saturate.seq.pl ....' >> job.monitor.txt");
-
 ## read in parameters required by the script
 my $blastfolder = shift @ARGV;			## blast result folder
 my $srcfolder = shift @ARGV;			## assembled contig folder
@@ -30,7 +28,4 @@ foreach my $sub(@subs){
 	system("cat $tgtfolder/$sub/$sub.full.length.contigs.nucl.fasta >> $tgtfolder/full.length.contigs.nucl.fasta");
 	system("cat $tgtfolder/$sub/$sub.full.length.contigs.prot.fasta >> $tgtfolder/full.length.contigs.prot.fasta");
 }
-
-
-system("echo 'Finished 10.transfer.saturate.seq.pl!' >> job.monitor.txt");
 

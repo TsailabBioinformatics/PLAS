@@ -4,8 +4,6 @@
 use strict;
 use Bio::SeqIO;
 
-system("echo 'Running 10.transfer.saturate.seq.pl ....' >> job.monitor.txt");
-
 ## read in parameters required by the script
 my $srcfolder = shift @ARGV;			## assembled contig folder
 my $blastfolder = shift @ARGV;			## blast result folder
@@ -15,76 +13,16 @@ my $mode = shift @ARGV;					## abs: absolute value; pct: percent value
 my $cutoff = shift @ARGV;				## absolute AA number, or percent
 my $sleeptime = shift @ARGV;
 my ($run) = $srcfolder =~ /\/run\.([0-9]+)/;
-my $errfile = "00.script/10.transfer.script/run.$run/transfer.saturate.seq.e";
-my $outfile = "00.script/10.transfer.script/run.$run/transfer.saturate.seq.o";
-
-=pod
-## check if previous step has succesfully finished
-my $reffolder = "01.data/05.SplitGenes/01.Protein/run.0";
-opendir(CHK, $reffolder) or die "ERROR: Cannot open $reffolder: $!";
-my @chks = sort(grep(/^[0-9]+/, readdir(CHK)));
-while(1){
-	my $count = 0;
-	my @temp = @chks;
-	my $i = 0;
-	while(my $chk = shift @temp){
-		my @stderr = glob("blastx.back.$chk.sh.o*");
-		my @stdout = glob("blastx.back.$chk.sh.e*");
-		my @log = glob("00.script/07.blastx.script/run.$run/$chk.done.*");
-		if(!($stderr[0] and $stdout[0] and $log[0])){
-			last; # job hasn't finished, no log file
-		}else{
-			system("grep -E 'ERROR|Error|error' blastx.back.$chk.sh.e* >> 00.script/07.blastx.script/run.$run/summary.error.log\n");
-			#system("echo 'success' > 00.script/shell.script/blastx.back.$chk.log\n");
-			$count ++; # job has finished, add one count
-		}
-	}
-	@temp = @chks;
-	if($count == scalar @chks){ # all jobs have finished
-		if(!-s "00.script/07.blastx.script/run.$run/summary.error.log"){ # check if all jobs are successful
-			system("echo 'There is no error for all jobs' >> job.monitor.txt");
-			while(my $chk = shift @temp){
-				if(!(-s "$blastfolder/$chk/$chk.contigs.blast.out")){
-					system("echo 'There is no output file for $chk' >> job.monitor.txt");
-					#system("rm -f blastx.back.$chk.*");
-					#system("rm -f 00.script/07.blastx.script/run.$run/$chk.done.log");
-					system("echo 'Resubmitting the job: truncate.header.$chk.sh' >> job.monitor.txt");
-					#system("qsub 00.script/07.blastx.script/run.$run/blastx.back.$chk.sh");
-				}
-				else{
-					$i++;
-				}
-			}
-			if($i == scalar @chks){
-				system("echo 'All jobs have been finished successfully' >> job.monitor.txt"); # error file is empty
-				last;
-			}
-		}else{
-			die "ERROR: something went wrong in previous steps\n";	
-		}
-	}
-	sleep $sleeptime;
-}
-close CHK;
-
-=cut
 
 ## start running the script
-system("mv blastx.back.* 00.script/07.blastx.script/run.$run/");
-system("mv blastn.back.* 00.script/07.blastn.script/run.$run/");
 
-system("rm -rf 00.script/10.transfer.script/run.$run");
-system("mkdir -p 00.script/10.transfer.script/run.$run");
 system("mkdir -p $tgtfolder");
 
 opendir(SRC, $blastfolder) or die "ERROR: Cannot open $blastfolder: $!";
 my @subs = sort(grep(/^[0-9]+$/, readdir SRC));
 closedir SRC;
 
-open(ERR, ">$errfile") or die "ERROR: Cannot write $errfile: $!";
-open(OUT, ">$outfile") or die "ERROR: Cannot write $outfile: $!";
 foreach my $sub (@subs){
-	print OUT "$sub\n";
 	
 	my $trinity_obj = Bio::SeqIO->new(-file => "$srcfolder/$sub.trinity/Trinity.new.fasta", -format => 'fasta');
 	my %query_length = ();
@@ -162,10 +100,6 @@ foreach my $sub (@subs){
 
 close TGT1;
 close TGT2;
-close ERR;
-close OUT;
-
-system("echo 'Finished 10.transfer.saturate.seq.pl!' >> job.monitor.txt");
 
 ########################
 sub Find_ORF{

@@ -1,11 +1,10 @@
 #PBS -S /bin/bash
 #PBS -q batch
-#PBS -l nodes=1:ppn=48:AMD
+#PBS -l nodes=1:ppn=08:HIGHMEM
 #PBS -l walltime=10:00:00
-#PBS -l mem=128gb
-
+#PBS -l mem=64gb
+cd $PBS_O_WORKDIR
 sub=${SUB}
-repeats=${REPEATS}
 mode="paired-end"
 logfolder="00.script/01.log"
 run="0"
@@ -19,7 +18,7 @@ return 0
 }
 
 echo 'Loading modules...' >> $logfolder/job.monitor_$sub.txt
-module load blast+
+module load ncbiblast+
 module load python
 module load diamond
 module load trinity
@@ -30,7 +29,7 @@ module load bowtie
 #########################################################
 
 
-echo 'Creating database for $sub...' >> $logfolder/job.monitor_$sub.txt
+echo "Creating database for $sub..." >> $logfolder/job.monitor_$sub.txt
 makeblastdb -in 01.data/05.SplitGenes/01.Protein/run.0/$sub/$sub.fasta -dbtype prot
 error_check "Failed to make blast prot db for $sub, check runMe.sh line "
 
@@ -48,18 +47,17 @@ echo 'Finished creating databases!' >> $logfolder/job.monitor_$sub.txt
 ###########derived from 03.diamond.folder.pl#############
 #########################################################
 
-	mode="paired-end"
-	b="0"
-	evalue=1e-3
+    mode="paired-end"
+    b="0"
+    evalue=1e-3
     qryfolder="01.data/02.Fasta"
     subfolder="01.data/05.SplitGenes/01.Protein/run.$run"
     tgtfolder="03.blast/03.bowtie.nucl/run.$run"
     seqtype="nucl"
-    logfolder="bowtie.log/bowtie.run.$run"
     echo 'Running 03.diamond.folder.pl ....' >> $logfolder/job.monitor_$sub.txt
 
 	echo "DB: $sub" >> $logfolder/job.monitor_$sub.txt
-		for sqry in $qryfolder/*; do
+		for qry in $qryfolder/*; do
 		if [ -d "$qry" ]; then 
 		qry=$(basename ${qry})
 		echo "qry: $qry" >> $logfolder/job.monitor_$sub.txt
@@ -92,7 +90,6 @@ echo 'Finished creating databases!' >> $logfolder/job.monitor_$sub.txt
 				echo 'Error: No read mode available!' >> $logfolder/job.monitor_$sub.txt
 			fi
 			
-			touch 00.script/$logfolder/$sub.$qry.done.log
 		fi
 		done	
 
@@ -102,15 +99,13 @@ echo 'Finished creating databases!' >> $logfolder/job.monitor_$sub.txt
 srcfolder="03.blast/03.bowtie.nucl/run.$run"
 tgtfolder="04.retrieve.reads/03.bowtie.nucl/run.$run"
 seqtype="nucl"
-logfolder="bowtie.log/bowtie.run.$run"
 blocksize="1000"
 scale="genome"
 sleeptime="20"
 thread="24"
 
 
-        chmod 777 -R 00.script/$logfolder
-        chmod 777 -R $srcfolder
+        chmod 777 -R $logfolder
         mkdir -p $tgtfolder/$sub
 	
 		for sam in 01.data/02.Fasta/*; do
@@ -119,20 +114,18 @@ thread="24"
 			sam=$(basename ${sam})
 				if [ $mode == "paired-end" ]; then	
 					echo "Starting paired-end for $sam/$sub" >> $logfolder/job.monitor_$sub.txt
-					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.R1.tab 01.data/02.Fasta/$sam/$sam.R1.fasta_pairs_R1.fasta $runlocksize >> $tgtfolder/$sub/retrieved.$sub.R1.fasta                        
-					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.R2.tab 01.data/02.Fasta/$sam/$sam.R2.fasta_pairs_R2.fasta $runlocksize >> $tgtfolder/$sub/retrieved.$sub.R2.fasta                        
-					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.single.tab 01.data/02.Fasta/$sam/$sam.R1.fasta_singles.fasta $runlocksize >> $tgtfolder/$sub/retrieved.$sub.R1.fasta
+					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.R1.tab 01.data/02.Fasta/$sam/$sam.R1.fasta_pairs_R1.fasta $blocksize >> $tgtfolder/$sub/retrieved.$sub.R1.fasta                        
+					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.R2.tab 01.data/02.Fasta/$sam/$sam.R2.fasta_pairs_R2.fasta $blocksize >> $tgtfolder/$sub/retrieved.$sub.R2.fasta                        
+					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.single.tab 01.data/02.Fasta/$sam/$sam.R1.fasta_singles.fasta $blocksize >> $tgtfolder/$sub/retrieved.$sub.R1.fasta
 					echo "Starting sed for $sam/$sub" >> $logfolder/job.monitor_$sub.txt
 					sed -i '/^>[A-Za-z0-9_]*/s/$/\/1/' $tgtfolder/$sub/retrieved.$sub.R1.fasta
 					sed -i '/^>[A-Za-z0-9_]*/s/$/\/2/' $tgtfolder/$sub/retrieved.$sub.R2.fasta
         			elif [ $mode == "single-end" ]; then                        
-					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.tab 01.data/02.Fasta/$sam/$sam.fasta $runlocksize >> $tgtfolder/$sub/retrieved.$sub.fasta                
+					perl 00.script/040.retrievebowtie.reads.pl $srcfolder/$sub/bowtie.out.$sub.$sam.tab 01.data/02.Fasta/$sam/$sam.fasta $blocksize >> $tgtfolder/$sub/retrieved.$sub.fasta                
 				else
 					echo "Error: No read type selected!" >> $logfolder/job.monitor_$sub.txt
 				fi	
 			fi
 		done
-		touch "00.script/04.retrieve.script/run.$run/$sub.done.log"
 
 	echo 'Finished 040.folder.retrievebowtie.reads.pl!' >> $logfolder/job.monitor_$sub.txt
-    chmod 777 -R 00.script/04.retrieve.script/run.$run

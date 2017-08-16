@@ -1,16 +1,31 @@
 #PBS -S /bin/bash
 #PBS -q batch
-#PBS -N PLAS
-#PBS -l nodes=1:ppn=48:AMD
-#PBS -l walltime=05:00:00
+#PBS -l nodes=1:ppn=12:HIGHMEM
+#PBS -l walltime=06:00:00
 #PBS -l mem=48gb
 
 ###################
 ###LOOP OF DEATH###
 ###################
+cd $PBS_O_WORKDIR
 run=${RUN}
+sub=${SUB}
+module load bowtie2
+module load ncbiblast+ 
+module load perl/5.20.2-thread
+module load trinity
 evalue=1e-3
 
+error_check() {
+        if [[ $? -ne 0 ]]; then
+        echo $1
+        exit $?
+        fi
+return 0
+}
+
+
+mode="paired-end"
 echo "Beginning run $run" >> 00.script/01.log/job.monitor_$sub.txt
 
 	if [ $run -gt "0" ]; then
@@ -18,9 +33,10 @@ echo "Beginning run $run" >> 00.script/01.log/job.monitor_$sub.txt
 		sleeptime="10"
 		let prerun="$run-1"
 
-		mkdir $tgtfolder/$sub
         cd $tgtfolder/$sub
-		bowtie2-build -f -q $sub.fasta $sub                        
+	
+	bowtie2-build -f -q $sub.fasta $sub                        
+		error_check "Bowtie build failed at line 39!"
 		cd ../../../../../
 
 	echo "Finished 021.makebowtiedb.folder.pl!" >> 00.script/01.log/job.monitor_$sub.txt
@@ -38,8 +54,6 @@ echo "Beginning run $run" >> 00.script/01.log/job.monitor_$sub.txt
     R3=()
     str2=""
     str3=""
-		
-   	mkdir $tgtfolder 
 		
 	mkdir -p $tgtfolder/$sub
 
@@ -81,8 +95,8 @@ echo "Beginning run $run" >> 00.script/01.log/job.monitor_$sub.txt
                         str3=${str3#?}
 							#-unmap
 			##Make a run bowtie script
-			time bowtie2 -f -x $dbfolder/$db/$db -p $thread --local -1 "$str1" -2 "$str2" -S $tgtfolder/$db/bowtie.out.$db.sam
-       
+			bowtie2 -f -x $dbfolder/$sub/$sub --no-unal -p $thread --local -1 "$str1" -2 "$str2" -U "$str3" -S $tgtfolder/$sub/bowtie.out.$sub.sam
+      			error_check "Bowtie 2 failed at lined 99!" 
 
 	         elif [ "$mode" == "Single-end" ]; then
 		##Construct R1 input string
@@ -97,9 +111,7 @@ echo "Beginning run $run" >> 00.script/01.log/job.monitor_$sub.txt
                         for elem in "${R1[@]}"; do str1="$str1,$elem"; done
                         str1=${str1#?}
 						
-						##FIX COMMAND GET RUNME SCRIPT MADE
-							#$unmap
-                        time bowtie2 -f -x $dbfolder/$db/$db -p $thread --local -U "$str1" -S $tgtfolder/$db/bowtie.out.$db.sam
+                        bowtie2 -f -x $dbfolder/$sub/$sub --un-unal -p $thread --local -U "$str1" -S $tgtfolder/$sub/bowtie.out.$sub.sam
                 else
                         echo "No read mode selected!" >> 00.script/01.log/job.monitor_$sub.txt
                         exit
@@ -127,28 +139,32 @@ echo "Beginning run $run" >> 00.script/01.log/job.monitor_$sub.txt
 				echo "Error, specify read mode" >> 00.script/01.log/job.monitor_$sub.txt
 				exit
             fi
-			touch "00.script/04.retrieve.script/run.$run/$sub.done.log"
 
 echo 'Finished 04.folder.retrievebowtie.reads.pl!' >> 00.script/01.log/job.monitor_$sub.txt
-chmod 777 -R 00.script/04.retrieve.script/run.$run
 
 fi
 
 #######################################
 echo "running trinity.runMe.sh ..." >> 00.script/01.log/job.monitor_$sub.txt
-thread="2"
-memory="24"
-
+memory=24
 tgtfolder=06.assembly/03.bowtie.nucl/run."$run"/"$sub".trinity
 srcfolder=04.retrieve.reads/03.bowtie.nucl/run."$run"/"$sub"
-mkdir $tgtfolder
 
-time Trinity --seqType fa --CPU $thread --max_memory "$memory"G \
-		     --left "$srcfolder"/retrieved."$sub".R1.fasta \
+while [[ ! -s $tgtfolder/Trinity.new.fasta ]]; do
+		rm -r $tgtfolder		
+		mkdir -p $tgtfolder
+
+		Trinity  --seqType fa --max_memory "$memory"G --CPU 8 \
+		         --left "$srcfolder"/retrieved."$sub".R1.fasta \
 			 --right "$srcfolder"/retrieved."$sub".R2.fasta \
-			 --output $tgtfolder --min_contig_length 100
-		
+			 --output $tgtfolder --min_contig_length 100		
+done
+
 echo "Trinity output to $tgtfolder/$sub.trinity"
+
+#######################################
+
+
 
 #######################################
 ###06.truncate.header.folder.pl
@@ -157,7 +173,7 @@ srcfolder="06.assembly/03.bowtie.nucl/run.$run"
 
 echo "Running 06.truncate.header.folder.pl ..." >> 00.script/01.log/job.monitor_$sub.txt
 
-time perl 00.script/06.truncate.header.pl $srcfolder/$sub/Trinity.fasta $srcfolder/$sub/Trinity.new.fasta
+time perl 00.script/06.truncate.header.pl $srcfolder/"$sub".trinity/Trinity.fasta $srcfolder/"$sub".trinity/Trinity.new.fasta
 
 echo "Finished running 06.truncate.header.folder.pl!" >> 00.script/01.log/job.monitor_$sub.txt
 #######################################
@@ -167,13 +183,10 @@ srcfolder="06.assembly/03.bowtie.nucl/run.$run"
 dbfolder="01.data/05.SplitGenes/01.Protein/run.0"
 tgtfolder="07.map.back/03.bowtie.nucl/run.$run"
 reffolder="01.data/05.SplitGenes/01.Protein/run.0"
-thread="24"
-
-mkdir $tgtfolder
 
 	mkdir -p $tgtfolder/$sub
-	blastx -db $dbfolder/$sub/$sub.fasta -query $srcfolder/$sub/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.out -evalue 1e-5  -outfmt 6 -num_threads 1 -max_target_seqs 1
-	blastx -db $dbfolder/$sub/$sub.fasta -query $srcfolder/$sub/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.xml.out -evalue 1e-5  -outfmt 5 -num_threads 1 -max_target_seqs 1
+	blastx -db $dbfolder/$sub/$sub.fasta -query $srcfolder/"$sub".trinity/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.out -evalue 1e-5  -outfmt 6 -num_threads 1 -max_target_seqs 1
+	blastx -db $dbfolder/$sub/$sub.fasta -query $srcfolder/"$sub".trinity/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.xml.out -evalue 1e-5  -outfmt 5 -num_threads 1 -max_target_seqs 1
 
 echo 'Finished 07.blastx.back.pl!' >> 00.script/01.log/job.monitor_$sub.txt
 
@@ -186,12 +199,9 @@ srcfolder="06.assembly/03.bowtie.nucl/run.$run"
 dbfolder="01.data/05.SplitGenes/02.Transcript/run.0"
 tgtfolder="07.map.back/02.blastn/run.$run"
 
-
-mkdir $tgtfolder
-
 	mkdir -p $tgtfolder/$sub
-	blastn -db $dbfolder/$sub/$sub.fasta -query $srcfolder/$sub/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.out -evalue 1e-10  -outfmt 6 -num_threads 1 -max_target_seqs 1
-	blastn -db $dbfolder/$sub/$sub.fasta -query $srcfolder/$sub/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.xml.out -evalue 1e-10  -outfmt 5 -num_threads 1 -max_target_seqs 1
+	blastn -db $dbfolder/$sub/$sub.fasta -query $srcfolder/"$sub".trinity/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.out -evalue 1e-10  -outfmt 6 -num_threads 1 -max_target_seqs 1
+	blastn -db $dbfolder/$sub/$sub.fasta -query $srcfolder/"$sub".trinity/Trinity.new.fasta -out $tgtfolder/$sub/$sub.contigs.blast.xml.out -evalue 1e-10  -outfmt 5 -num_threads 1 -max_target_seqs 1
 
 echo "Finished 07.blastn.back.pl!" >> 00.script/01.log/job.monitor_$sub.txt
 

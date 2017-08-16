@@ -1,5 +1,10 @@
-#!/bin/bash
-
+#PBS -S /bin/bash
+#PBS -q batch
+#PBS -l nodes=1:ppn=48:HIGHMEM
+#PBS -l walltime=00:45:00
+#PBS -l mem=50gb
+#PBS -N prerun
+#PBS -o zzz.o%j
 # this part only needs to be run once, it prepares and formats the data
 # error-checking function, kills job and reports to error file on non-zero exit
 error_check() {
@@ -12,12 +17,13 @@ return 0
 
 logfolder="00.script/01.log/"
 #Load required modules
-module load blast+
+module load ncbiblast+
 module load perl
 module load mcl
 module load R
-error_check "Failed to load a module, check preRun.sh line 24 through 27"
-
+module load diamond
+module load python/2.7.8
+: <<'END'
 # ncbi blast to create protein databases
 makeblastdb -in 01.data/00.PriorData/proteome.fa -dbtype prot
 error_check "Failed to make blast db, check preRun.sh line 31"
@@ -105,6 +111,8 @@ done
 
 echo 'Finished converting fastq to fasta!' >> $logfolder/job.monitor_preRun.txt
 
+END
+
 #########################################################
 #########derived from 01.folder.IDConverter.pl########### !!!MOVE TO PRERUN!!!
 #########################################################
@@ -115,7 +123,7 @@ echo 'Running 01.folder.IDConverter.pl ....' >> $logfolder/job.monitor_preRun.tx
 srcfolder="01.data/02.Fasta"
 mode="paired-end"
 
-for db in 01.data/01.Fastq/*; do
+for db in 01.data/02.Fasta/*; do
   if [ -d "$db" ]; then
         db=$(basename ${db})
         if [ $mode == "paired-end" ]; then

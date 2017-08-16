@@ -1,12 +1,12 @@
 #PBS -S /bin/bash
 #PBS -q batch
 #PBS -N PLAS
-#PBS -l nodes=1:ppn=48:AMD
+#PBS -l nodes=1:ppn=12:HIGHMEM
 #PBS -l walltime=10:00:00
 #PBS -l mem=48gb
-
-module load blast+
-module load perl
+cd $PBS_O_WORKDIR
+module load ncbiblast+
+module load perl/5.20.2-thread
 
 ##Summarize all runs
 grep ">" 01.data/05.SplitGenes/03.Full.Length/full.length.contigs.nucl.fasta > 01.data/05.SplitGenes/03.Full.Length/count1
