@@ -150,7 +150,7 @@ memory=24
 tgtfolder=06.assembly/03.bowtie.nucl/run."$run"/"$sub".trinity
 srcfolder=04.retrieve.reads/03.bowtie.nucl/run."$run"/"$sub"
 
-while [[ ! -s $tgtfolder/Trinity.new.fasta ]]; do
+while [[ ! -s $tgtfolder/Trinity.fasta ]]; do
 		rm -r $tgtfolder		
 		mkdir -p $tgtfolder
 

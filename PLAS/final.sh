@@ -1,6 +1,6 @@
 #PBS -S /bin/bash
 #PBS -q batch
-#PBS -N PLAS
+#PBS -N PLASF
 #PBS -l nodes=1:ppn=12:HIGHMEM
 #PBS -l walltime=10:00:00
 #PBS -l mem=48gb

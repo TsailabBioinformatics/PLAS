@@ -23,7 +23,6 @@ module load mcl
 module load R
 module load diamond
 module load python/2.7.8
-: <<'END'
 # ncbi blast to create protein databases
 makeblastdb -in 01.data/00.PriorData/proteome.fa -dbtype prot
 error_check "Failed to make blast db, check preRun.sh line 31"
@@ -110,8 +109,6 @@ for sub in 01.data/01.Fastq/*; do
 done
 
 echo 'Finished converting fastq to fasta!' >> $logfolder/job.monitor_preRun.txt
-
-END
 
 #########################################################
 #########derived from 01.folder.IDConverter.pl########### !!!MOVE TO PRERUN!!!
