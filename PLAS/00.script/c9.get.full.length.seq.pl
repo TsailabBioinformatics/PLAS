@@ -6,7 +6,6 @@ use strict;
 my $reffile = shift @ARGV;
 my $srcfile = shift @ARGV;
 my $tgtfile = shift @ARGV;
-
 open(REF, $reffile);
 my %hash = ();
 foreach my $line (<REF>){
@@ -18,7 +17,7 @@ foreach my $line (<REF>){
 	if(not exists $hash{$run}{$gene}{$contig}){
 		$hash{$run}{$gene}{$contig} = 0;
 	}else{
-		die "Something unexpected occurs.\n";
+		die "Something unexpected occured in c9.get.full.length.seq.\n";
 	}
 }
 close REF;

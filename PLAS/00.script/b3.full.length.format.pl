@@ -3,26 +3,26 @@
 use strict;
 
 my $groupfile = shift @ARGV;
-my $file = shift @ARGV;
+my $idfile = shift @ARGV;
 my $out1 = shift @ARGV;
 my $out2 = shift @ARGV;
 
-open(SRC, $file);
-open(GRP, $groupfile);
-open(TGT, ">$out1");
-open(TGT2, ">$out2");
+open(GENE_ID, $idfile);
+open(COUNT1, $groupfile);
+open(COUNT2, ">$out1");
+open(COUNT3, ">$out2");
 
 my %group = ();
-while(my $line = <GRP>){
+while(my $line = <COUNT1>){
 	chomp $line;
 	my @lines = split(/\s+/, $line);
 	if(not exists $group{$lines[0]}){
-		$group{$lines[0]} = $lines[4]; #Should be changed to 4? (New geneID file is five fields wide, first field becomes key, rest become attributes?
+		$group{$lines[0]} = $lines[2]; #Should be changed to 4? (New geneID file is five fields wide, first field becomes key, rest become attributes?
 	}
 }
 
 my %hash = ();
-foreach my $line (<SRC>){
+foreach my $line (<GENE_ID>){
     chomp $line;
     my @lines = split(/\s+/, $line);
 	my $qname = $lines[0];
@@ -101,14 +101,15 @@ foreach my $line (<SRC>){
 }
 
 foreach my $key (sort keys %hash){
-    print TGT "$key\n";
+    print COUNT2 "$key\n";
     my $run = $hash{$key}->{run};
     foreach my $contig (@{$hash{$key}->{query}}){
-        print TGT2 "$key\t$contig\t$run\n";
+        print COUNT3 "$key\t$contig\t$run\n";
     }
 }
 
-close SRC;
-close TGT;
-close TGT2;
+close GENE_ID;
+close COUNT1;
+close COUNT2;
+close COUNT3;
 

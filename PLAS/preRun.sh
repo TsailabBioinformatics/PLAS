@@ -61,7 +61,7 @@ error_check "PERL failed us! Check preRun.sh line 67 and a4.splitGene.pl"
 
 # get meta-data for the meta-group, eg. gene/protein length, which group each gene belongs to
 echo "getting relevant info"
-time perl 00.script/a5.releventInfo.pl 01.data/04.GeneOfInterest/GeneID.txt 01.data/00.PriorData/proteome.fa 01.data/00.PriorData/transcriptome.fa 01.data/04.GeneOfInterest/GeneID.v1.txt 1000
+time perl 00.script/a5.relevantInfo.pl 01.data/04.GeneOfInterest/GeneID.txt 01.data/00.PriorData/proteome.fa 01.data/00.PriorData/transcriptome.fa 01.data/04.GeneOfInterest/GeneID.v1.txt 1000
 error_check "PERL failed us! Check preRun.sh line 73 and a5.releventInfo.pl"
 
 #########################################################

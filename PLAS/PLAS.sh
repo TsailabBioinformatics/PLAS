@@ -5,20 +5,19 @@
 #PBS -l walltime=04:00:00
 #PBS -l mem=10gb
 cd $PBS_O_WORKDIR
-repeats=3
-counter=1
+repeats=10
+counter=0
 WAIT1=""
 WAIT2=""
-#./preRun.sh
+./preRun.sh
 
-#for sub in 01.data/05.SplitGenes/01.Protein/run.0/*; do 
-#	sub=$(basename ${sub})
-#	WAIT1+=$(qsub -N PLAS_$sub -v SUB=$sub, runMe.sh)
-#	WAIT1+=",afterok:"
-#done
+for sub in 01.data/05.SplitGenes/01.Protein/run.0/*; do 
+	sub=$(basename ${sub})
+	WAIT1+=$(qsub -N PLAS_$sub -v SUB=$sub, runMe.sh)
+	WAIT1+=",afterok:"
+done
 
-#WAIT1=${WAIT1%?????????}
-WAIT1=$(qsub sleepy.sh)
+WAIT1=${WAIT1%?????????}
 
 while [ $repeats -ge $counter ]; do
 	WAIT2=""
@@ -34,5 +33,5 @@ WAIT1=$(qsub -W depend=afterok:$WAIT2 -N PLASA_${counter} -v RUN=$counter, assem
 	let counter=$counter+1
 done
 
-#qsub -W depend=afterok:$WAIT1 -N PLAS_final final.sh
-#echo "All done!" >> 00.script/01.log/job_monitor_master.sh
+qsub -W depend=afterok:$WAIT1 -N PLAS_final final.sh
+echo "All done!"
